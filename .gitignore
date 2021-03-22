@@ -3,3 +3,4 @@ Cargo.lock
 target/
 
 tasks/tmp/*.json
+tmp/*.json
