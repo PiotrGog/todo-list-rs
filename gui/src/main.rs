@@ -4,8 +4,6 @@ use gui::build_ui;
 use std::env::args;
 
 fn main() {
-    println!("Hello world!");
-
     let application = gtk::Application::new(
         Some("com.github.gtk-rs.examples.drag_and_drop"),
         Default::default(),

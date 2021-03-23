@@ -14,12 +14,12 @@ use std::rc::Rc;
 
 type TasksRc = Rc<RefCell<Tasks>>;
 
-const TASKS_FILE_NAME: &str = "tasks.json";
+const TASKS_FILE_NAME: &str = "./tmp/tasks.json";
 
 pub fn build_ui(application: &gtk::Application) {
     let tasks: TasksRc = Rc::new(RefCell::new(Tasks::new()));
     if let Err(e) = tasks.borrow_mut().load_from_file_json(TASKS_FILE_NAME) {
-        panic!("Application error: {}", e)
+        println!("Loading file with tasks failes with error: {}", e);
     }
 
     let todo_tasks = create_labeled_box_fox_tasks("To do");
@@ -77,7 +77,7 @@ fn update_visible_tasks(container: &gtk::Box, tasks: &TasksRc) {
 
         tasks_container.pack_start(&todo_label, false, true, 0);
     }
-    println!("{}", container.get_children().len());
+    println!("Visible tasks in column {}", container.get_children().len());
 }
 
 fn create_labeled_box_fox_tasks(label_text: &str) -> gtk::Box {
