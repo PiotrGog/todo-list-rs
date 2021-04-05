@@ -1,12 +1,16 @@
-use gtk::prelude::*;
+extern crate tasks as tasks_model;
+
 use gtk;
+use gtk::prelude::*;
 use relm;
 use relm_derive;
+
+use std::{cell::RefCell, rc::Rc};
 
 mod tasks;
 
 use self::tasks::Column as TasksColumn;
-use self::tasks::Task as Task;
+use self::tasks::Task;
 
 #[derive(relm_derive::Msg)]
 pub enum Msg {
@@ -15,16 +19,14 @@ pub enum Msg {
 }
 
 pub struct Model {
-    a: String,
-    b: String,
+    tasks: Rc<RefCell<tasks_model::tasks::Tasks>>,
 }
 
 #[relm_derive::widget]
 impl relm::Widget for Win {
-    fn model(_: &relm::Relm<Self>, param: (String, String)) -> Model {
-        return Model{
-            a: param.0,
-            b: param.1,
+    fn model(_: &relm::Relm<Self>, tasks: Rc<RefCell<tasks_model::tasks::Tasks>>) -> Model {
+        return Model {
+            tasks
         };
     }
 
@@ -32,30 +34,38 @@ impl relm::Widget for Win {
         match event {
             Msg::AddNewTask => {
                 println!("Msg::AddNewTask");
-                self.components.to_do_tasks.emit(
-                    tasks::Msg::AddTask(self.model.a.clone(), self.model.b.clone())
-                );
-            },
+                // for (_, task) in &self.model.tasks.borrow().tasks {
+                //     self.components.to_do_tasks.emit(
+                //         tasks::Msg::AddTask(task.get_id(), task.title.clone(), task.description.clone())
+                //     );
+                // }
+            }
             Msg::Quit => {
                 println!("Msg::Quit");
                 gtk::main_quit()
-            },
+            }
         }
     }
 
     view! {
         gtk::Window {
             gtk::Box {
-                orientation: gtk::Orientation::Horizontal,
+                orientation: gtk::Orientation::Vertical,
 
-                #[name="to_do_tasks"]
-                TasksColumn("To do".to_string()),
+                gtk::Box {
 
-                #[name="in_progress_tasks"]
-                TasksColumn("In progress".to_string()),
+                    orientation: gtk::Orientation::Horizontal,
 
-                #[name="done_tasks"]
-                TasksColumn("Done".to_string()),
+                    #[name="to_do_tasks"]
+                    TasksColumn("To do".to_string()),
+
+                    #[name="in_progress_tasks"]
+                    TasksColumn("In progress".to_string()),
+
+                    #[name="done_tasks"]
+                    TasksColumn("Done".to_string()),
+
+                },
 
                 #[name="new_task_button"]
                 gtk::Button {
@@ -66,6 +76,42 @@ impl relm::Widget for Win {
             // Use a tuple when you want to both send a message and return a value to
             // the GTK+ callback.
             delete_event(_, _) => (Msg::Quit, gtk::Inhibit(false)),
+        }
+    }
+
+    fn init_view(&mut self) {
+        println!("Init view");
+
+        for (_, task) in &self.model.tasks.borrow().tasks {
+            match &task.status {
+                tasks_model::status::Status::ToDo => {
+                    println!("Msg::to_do_tasks");
+                    self.components.to_do_tasks.emit(tasks::Msg::AddTask(
+                        task.get_id(),
+                        task.title.clone(),
+                        task.description.clone(),
+                    ));
+                }
+                tasks_model::status::Status::InProgress => {
+                    println!("Msg::in_progress_tasks");
+                    self.components.in_progress_tasks.emit(tasks::Msg::AddTask(
+                        task.get_id(),
+                        task.title.clone(),
+                        task.description.clone(),
+                    ));
+                }
+                tasks_model::status::Status::Done => {
+                    println!("Msg::done_tasks");
+                    self.components.done_tasks.emit(tasks::Msg::AddTask(
+                        task.get_id(),
+                        task.title.clone(),
+                        task.description.clone(),
+                    ));
+                }
+                not_known => {
+                    panic!("Not known task's status type {:?}", not_known);
+                }
+            }
         }
     }
 }

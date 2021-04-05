@@ -1,5 +1,6 @@
 Cargo.lock
 
+.idea/
 target/
 
 tasks/tmp/*.json

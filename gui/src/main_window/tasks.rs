@@ -24,16 +24,18 @@ pub enum TaskMsg {
 }
 
 pub struct TaskModel {
+    pub id: u32,
     pub title: String,
     pub description: String
 }
 
 #[relm_derive::widget]
 impl relm::Widget for Task {
-    fn model(param: (String, String)) -> TaskModel {
+    fn model(param: (u32, String, String)) -> TaskModel {
         TaskModel {
-            title: param.0,
-            description: param.1,
+            id: param.0,
+            title: param.1,
+            description: param.2,
         }
     }
 
@@ -51,25 +53,28 @@ impl relm::Widget for Task {
     }
 
     view! {
-        gtk::Box {
-            orientation: gtk::Orientation::Vertical,
+        gtk::Frame {
+            gtk::Box {
+                orientation: gtk::Orientation::Vertical,
+                border_width: 10,
 
-            #[name="label"]
-            gtk::Label {
-                text: &self.model.title,
+                #[name="label"]
+                gtk::Label {
+                    text: &self.model.title,
+                },
+
+                #[name="description"]
+                gtk::Label {
+                    text: &self.model.description,
+                },
             },
-
-            #[name="description"]
-            gtk::Label {
-                text: &self.model.description,
-            }
         }
     }
 }
 
 #[derive(relm_derive::Msg)]
 pub enum Msg {
-    AddTask(String, String),
+    AddTask(u32, String, String),
 }
 
 pub struct Model {
@@ -88,26 +93,31 @@ impl relm::Widget for Column {
 
     fn update(&mut self, event: Msg) {
         match event {
-            Msg::AddTask(label, description) => {
-                println!("Msg::AddTask({}, {})", label, description);
-                let component = self.widgets.column_tasks.add_widget::<Task>((label, description));
-                self.model.tasks.insert(1, component);
+            Msg::AddTask(id, title, description) => {
+                println!("Msg::AddTask({}, {}, {})", id, title, description);
+                let component = self.widgets.column_tasks.add_widget::<Task>((id, title, description));
+                self.model.tasks.insert(id, component);
             },
         }
     }
 
     view! {
-        gtk::Box {
-            orientation: gtk::Orientation::Vertical,
-
-            #[name="column_name"]
-            gtk::Label {
-                label: &self.model.label,
-            },
-
-            #[name="column_tasks"]
+        gtk::Frame {
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
+                border_width: 10,
+                spacing: 20,
+
+                #[name="column_name"]
+                gtk::Label {
+                    label: &self.model.label,
+                },
+
+                #[name="column_tasks"]
+                gtk::Box {
+                    spacing: 10,
+                    orientation: gtk::Orientation::Vertical,
+                },
             },
         },
     }
