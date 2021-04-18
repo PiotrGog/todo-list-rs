@@ -5,40 +5,61 @@ use gtk::prelude::*;
 use relm;
 use relm_derive;
 
+use rand::Rng;
 use std::{cell::RefCell, rc::Rc};
 
+mod add_task;
 mod tasks;
 
 use self::tasks::Column as TasksColumn;
-use self::tasks::Task;
 
-#[derive(relm_derive::Msg)]
+#[derive(Debug, relm_derive::Msg)]
 pub enum Msg {
-    AddNewTask,
+    CreateTask(String, String),
+    OpenNewTaskWindow,
     Quit,
 }
 
 pub struct Model {
     tasks: Rc<RefCell<tasks_model::tasks::Tasks>>,
+    relm: relm::Relm<Win>,
+    _win: Option<relm::Component<add_task::AddTask>>,
 }
 
 #[relm_derive::widget]
 impl relm::Widget for Win {
-    fn model(_: &relm::Relm<Self>, tasks: Rc<RefCell<tasks_model::tasks::Tasks>>) -> Model {
+    fn model(relm: &relm::Relm<Self>, tasks: Rc<RefCell<tasks_model::tasks::Tasks>>) -> Model {
         return Model {
-            tasks
+            tasks,
+            relm: relm.clone(),
+            _win: None,
         };
     }
 
     fn update(&mut self, event: Msg) {
         match event {
-            Msg::AddNewTask => {
-                println!("Msg::AddNewTask");
-                // for (_, task) in &self.model.tasks.borrow().tasks {
-                //     self.components.to_do_tasks.emit(
-                //         tasks::Msg::AddTask(task.get_id(), task.title.clone(), task.description.clone())
-                //     );
-                // }
+            Msg::CreateTask(title, description) => {
+                let task = tasks_model::task::Task::new(
+                    rand::thread_rng().gen(),
+                    &title[..],
+                    &description[..],
+                );
+                self.components.to_do_tasks.emit(tasks::Msg::AddTask(
+                    task.get_id(),
+                    task.title.clone(),
+                    task.description.clone(),
+                ));
+                self.model.tasks.borrow_mut().add_task(task);
+
+                self.model._win.as_ref().unwrap().widget().close();
+                self.model._win = None;
+            }
+            Msg::OpenNewTaskWindow => {
+                println!("Msg::OpenNewTaskWindow");
+                self.model._win = Some(
+                    relm::init::<add_task::AddTask>(self.model.relm.stream().clone())
+                        .expect("secondary window"),
+                );
             }
             Msg::Quit => {
                 println!("Msg::Quit");
@@ -70,11 +91,9 @@ impl relm::Widget for Win {
                 #[name="new_task_button"]
                 gtk::Button {
                     label: "Add",
-                    clicked => Msg::AddNewTask,
+                    clicked => Msg::OpenNewTaskWindow,
                 }
             },
-            // Use a tuple when you want to both send a message and return a value to
-            // the GTK+ callback.
             delete_event(_, _) => (Msg::Quit, gtk::Inhibit(false)),
         }
     }
@@ -108,8 +127,9 @@ impl relm::Widget for Win {
                         task.description.clone(),
                     ));
                 }
-                not_known => {
-                    panic!("Not known task's status type {:?}", not_known);
+                #[allow(unreachable_patterns)]
+                _not_known => {
+                    panic!("Not known task's status type {:?}", _not_known);
                 }
             }
         }
