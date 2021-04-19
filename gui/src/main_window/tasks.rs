@@ -12,6 +12,7 @@ use relm::ContainerWidget;
 pub enum TaskMsg {
     SetTitle(String),
     SetDescription(String),
+    Edit,
 }
 
 pub struct TaskModel {
@@ -40,6 +41,9 @@ impl relm::Widget for Task {
                 println!("SetTitle({})", title);
                 self.model.title = title;
             }
+            TaskMsg::Edit => {
+                println!("EditTask");
+            }
         }
     }
 
@@ -58,6 +62,12 @@ impl relm::Widget for Task {
                 gtk::Label {
                     text: &self.model.description,
                 },
+
+                #[name="edit_button"]
+                gtk::Button {
+                    label: "Edit",
+                    clicked => TaskMsg::Edit,
+                }
             },
         }
     }

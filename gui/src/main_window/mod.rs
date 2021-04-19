@@ -74,7 +74,6 @@ impl relm::Widget for Win {
                 orientation: gtk::Orientation::Vertical,
 
                 gtk::Box {
-
                     orientation: gtk::Orientation::Horizontal,
 
                     #[name="to_do_tasks"]

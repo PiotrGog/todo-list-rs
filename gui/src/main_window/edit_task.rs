@@ -15,7 +15,7 @@ pub struct Model {
 }
 
 #[relm_derive::widget]
-impl relm::Widget for AddTask {
+impl relm::Widget for EditTask {
     fn model(win_stream: relm::StreamHandle<MainWindowMsg>) -> Model {
         return Model {
             event_stream: win_stream,
