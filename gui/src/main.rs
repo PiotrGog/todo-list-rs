@@ -16,7 +16,7 @@ fn main() {
             TASKS_FILE_NAME, e
         );
     }
-    main_window::Win::run(Rc::clone(&_tasks)).unwrap();
+    main_window::main_window::MainWindow::run(Rc::clone(&_tasks)).unwrap();
     if let Err(e) = _tasks.borrow_mut().save_to_file_json(TASKS_FILE_NAME) {
         println!(
             "Saving tasks to file {} failed with error: {}",

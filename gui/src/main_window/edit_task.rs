@@ -3,28 +3,28 @@ use gtk::prelude::*;
 use relm;
 use relm_derive;
 
-use crate::main_window::Msg as MainWindowMsg;
+use crate::main_window::main_window;
 
 #[derive(relm_derive::Msg)]
-pub enum Msg {
+pub enum EditTaskMsg {
     CreateTask,
 }
 
 pub struct Model {
-    event_stream: relm::StreamHandle<MainWindowMsg>,
+    event_stream: relm::StreamHandle<main_window::MainWindowMsg>,
 }
 
 #[relm_derive::widget]
 impl relm::Widget for EditTask {
-    fn model(win_stream: relm::StreamHandle<MainWindowMsg>) -> Model {
+    fn model(win_stream: relm::StreamHandle<main_window::MainWindowMsg>) -> Model {
         return Model {
             event_stream: win_stream,
         };
     }
 
-    fn update(&mut self, event: Msg) {
+    fn update(&mut self, event: EditTaskMsg) {
         match event {
-            Msg::CreateTask => {
+            EditTaskMsg::CreateTask => {
                 let title = self.widgets.title_entry.get_text().as_str().to_string();
                 let description = self
                     .widgets
@@ -51,7 +51,7 @@ impl relm::Widget for EditTask {
 
                 self.model
                     .event_stream
-                    .emit(MainWindowMsg::CreateTask(title, description));
+                    .emit(main_window::MainWindowMsg::CreateTask(title, description));
             }
         }
     }
@@ -81,7 +81,7 @@ impl relm::Widget for EditTask {
                 #[name="create_task"]
                 gtk::Button {
                     label: "Create",
-                    clicked => Msg::CreateTask,
+                    clicked => EditTaskMsg::CreateTask,
                 }
             },
         }
