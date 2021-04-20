@@ -15,6 +15,7 @@ use super::column::Column as TasksColumn;
 #[derive(Debug, relm_derive::Msg)]
 pub enum MainWindowMsg {
     CreateTask(String, String),
+    DeleteTask(u32, tasks_model::status::Status),
     OpenNewTaskWindow,
     Quit,
 }
@@ -44,9 +45,11 @@ impl relm::Widget for MainWindow {
                     &description[..],
                 );
                 self.components.to_do_tasks.emit(column::ColumnMsg::AddTask(
+                    self.model.relm.stream().clone(),
                     task.get_id(),
                     task.title.clone(),
                     task.description.clone(),
+                    task.status.clone(),
                 ));
                 self.model.tasks.borrow_mut().add_task(task);
 
@@ -58,6 +61,33 @@ impl relm::Widget for MainWindow {
                     .close();
 
                 self.model.add_task_window = None;
+            }
+            MainWindowMsg::DeleteTask(task_id, status) => {
+                self.model.tasks.borrow_mut().remove_task(task_id);
+
+                match status {
+                    tasks_model::status::Status::ToDo => {
+                        println!("Msg::to_do_tasks");
+                        self.components
+                            .to_do_tasks
+                            .emit(column::ColumnMsg::DeleteTask(task_id));
+                    }
+                    tasks_model::status::Status::InProgress => {
+                        println!("Msg::in_progress_tasks");
+                        self.components
+                            .in_progress_tasks
+                            .emit(column::ColumnMsg::DeleteTask(task_id));
+                    }
+                    tasks_model::status::Status::Done => {
+                        self.components
+                            .done_tasks
+                            .emit(column::ColumnMsg::DeleteTask(task_id));
+                    }
+                    #[allow(unreachable_patterns)]
+                    _not_known => {
+                        panic!("Not known task's status type {:?}", _not_known);
+                    }
+                }
             }
             MainWindowMsg::OpenNewTaskWindow => {
                 println!("Msg::OpenNewTaskWindow");
@@ -110,9 +140,11 @@ impl relm::Widget for MainWindow {
                 tasks_model::status::Status::ToDo => {
                     println!("Msg::to_do_tasks");
                     self.components.to_do_tasks.emit(column::ColumnMsg::AddTask(
+                        self.model.relm.stream().clone(),
                         task.get_id(),
                         task.title.clone(),
                         task.description.clone(),
+                        task.status.clone(),
                     ));
                 }
                 tasks_model::status::Status::InProgress => {
@@ -120,17 +152,21 @@ impl relm::Widget for MainWindow {
                     self.components
                         .in_progress_tasks
                         .emit(column::ColumnMsg::AddTask(
+                            self.model.relm.stream().clone(),
                             task.get_id(),
                             task.title.clone(),
                             task.description.clone(),
+                            task.status.clone(),
                         ));
                 }
                 tasks_model::status::Status::Done => {
                     println!("Msg::done_tasks");
                     self.components.done_tasks.emit(column::ColumnMsg::AddTask(
+                        self.model.relm.stream().clone(),
                         task.get_id(),
                         task.title.clone(),
                         task.description.clone(),
+                        task.status.clone(),
                     ));
                 }
                 #[allow(unreachable_patterns)]

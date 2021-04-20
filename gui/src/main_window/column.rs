@@ -1,4 +1,4 @@
-// mod task;
+extern crate tasks as tasks_model;
 
 use gtk;
 use gtk::prelude::*;
@@ -9,11 +9,19 @@ use std::collections::HashMap;
 use gtk::{LabelExt, OrientableExt};
 use relm::ContainerWidget;
 
+use crate::main_window::main_window;
 use crate::main_window::task;
 
 #[derive(relm_derive::Msg)]
 pub enum ColumnMsg {
-    AddTask(u32, String, String),
+    AddTask(
+        relm::StreamHandle<main_window::MainWindowMsg>,
+        u32,
+        String,
+        String,
+        tasks_model::status::Status,
+    ),
+    DeleteTask(u32),
 }
 
 pub struct Model {
@@ -32,13 +40,20 @@ impl relm::Widget for Column {
 
     fn update(&mut self, event: ColumnMsg) {
         match event {
-            ColumnMsg::AddTask(id, title, description) => {
+            ColumnMsg::AddTask(main_window_event_stream, id, title, description, status) => {
                 println!("Msg::AddTask({}, {}, {})", id, title, description);
-                let component =
-                    self.widgets
-                        .column_tasks
-                        .add_widget::<task::Task>((id, title, description));
+                let component = self.widgets.column_tasks.add_widget::<task::Task>((
+                    main_window_event_stream,
+                    id,
+                    title,
+                    description,
+                    status,
+                ));
                 self.model.tasks.insert(id, component);
+            }
+            ColumnMsg::DeleteTask(task_id) => {
+                let task_widget = self.model.tasks.remove(&task_id).unwrap();
+                self.widgets.column_tasks.remove_widget(task_widget);
             }
         }
     }

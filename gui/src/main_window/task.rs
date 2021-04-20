@@ -1,9 +1,13 @@
+extern crate tasks as tasks_model;
+
 use gtk;
 use gtk::prelude::*;
 use relm;
 use relm_derive;
 
 use gtk::{LabelExt, OrientableExt};
+
+use crate::main_window::main_window;
 
 #[allow(dead_code)]
 #[derive(relm_derive::Msg)]
@@ -15,18 +19,30 @@ pub enum TaskMsg {
 }
 
 pub struct TaskModel {
+    main_window_event_stream: relm::StreamHandle<main_window::MainWindowMsg>,
     pub id: u32,
     pub title: String,
     pub description: String,
+    status: tasks_model::status::Status,
 }
 
 #[relm_derive::widget]
 impl relm::Widget for Task {
-    fn model(param: (u32, String, String)) -> TaskModel {
+    fn model(
+        param: (
+            relm::StreamHandle<main_window::MainWindowMsg>,
+            u32,
+            String,
+            String,
+            tasks_model::status::Status,
+        ),
+    ) -> TaskModel {
         TaskModel {
-            id: param.0,
-            title: param.1,
-            description: param.2,
+            main_window_event_stream: param.0,
+            id: param.1,
+            title: param.2,
+            description: param.3,
+            status: param.4,
         }
     }
 
@@ -45,6 +61,12 @@ impl relm::Widget for Task {
             }
             TaskMsg::Delete => {
                 println!("DeleteTask");
+                self.model
+                    .main_window_event_stream
+                    .emit(main_window::MainWindowMsg::DeleteTask(
+                        self.model.id,
+                        self.model.status.clone(),
+                    ));
             }
         }
     }
@@ -73,7 +95,7 @@ impl relm::Widget for Task {
 
                 #[name="delete_button"]
                 gtk::Button {
-                    label: "Edit",
+                    label: "Delete",
                     clicked => TaskMsg::Delete,
                 }
             },
