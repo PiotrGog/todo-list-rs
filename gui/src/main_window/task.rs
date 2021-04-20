@@ -11,6 +11,7 @@ pub enum TaskMsg {
     SetTitle(String),
     SetDescription(String),
     Edit,
+    Delete,
 }
 
 pub struct TaskModel {
@@ -42,6 +43,9 @@ impl relm::Widget for Task {
             TaskMsg::Edit => {
                 println!("EditTask");
             }
+            TaskMsg::Delete => {
+                println!("DeleteTask");
+            }
         }
     }
 
@@ -65,6 +69,12 @@ impl relm::Widget for Task {
                 gtk::Button {
                     label: "Edit",
                     clicked => TaskMsg::Edit,
+                },
+
+                #[name="delete_button"]
+                gtk::Button {
+                    label: "Edit",
+                    clicked => TaskMsg::Delete,
                 }
             },
         }

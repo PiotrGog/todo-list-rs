@@ -56,6 +56,7 @@ impl relm::Widget for MainWindow {
                     .unwrap()
                     .widget()
                     .close();
+
                 self.model.add_task_window = None;
             }
             MainWindowMsg::OpenNewTaskWindow => {

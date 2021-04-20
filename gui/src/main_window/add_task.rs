@@ -11,14 +11,14 @@ pub enum AddTaskMsg {
 }
 
 pub struct Model {
-    event_stream: relm::StreamHandle<main_window::MainWindowMsg>,
+    main_window_event_stream: relm::StreamHandle<main_window::MainWindowMsg>,
 }
 
 #[relm_derive::widget]
 impl relm::Widget for AddTask {
-    fn model(win_stream: relm::StreamHandle<main_window::MainWindowMsg>) -> Model {
+    fn model(main_window_event_stream: relm::StreamHandle<main_window::MainWindowMsg>) -> Model {
         return Model {
-            event_stream: win_stream,
+            main_window_event_stream,
         };
     }
 
@@ -50,7 +50,7 @@ impl relm::Widget for AddTask {
                 }
 
                 self.model
-                    .event_stream
+                    .main_window_event_stream
                     .emit(main_window::MainWindowMsg::CreateTask(title, description));
             }
         }
