@@ -7,6 +7,7 @@ use relm_derive;
 
 use gtk::{LabelExt, OrientableExt};
 
+use super::edit_task;
 use crate::main_window::main_window;
 
 #[allow(dead_code)]
@@ -14,21 +15,25 @@ use crate::main_window::main_window;
 pub enum TaskMsg {
     SetTitle(String),
     SetDescription(String),
-    Edit,
+    UpdateTask(u32, String, String),
+    OpenEditTaskWindow,
     Delete,
 }
 
 pub struct TaskModel {
+    relm: relm::Relm<Task>,
     main_window_event_stream: relm::StreamHandle<main_window::MainWindowMsg>,
     pub id: u32,
     pub title: String,
     pub description: String,
     status: tasks_model::status::Status,
+    edit_task_window: Option<relm::Component<edit_task::EditTask>>,
 }
 
 #[relm_derive::widget]
 impl relm::Widget for Task {
     fn model(
+        relm: &relm::Relm<Self>,
         param: (
             relm::StreamHandle<main_window::MainWindowMsg>,
             u32,
@@ -38,11 +43,13 @@ impl relm::Widget for Task {
         ),
     ) -> TaskModel {
         TaskModel {
+            relm: relm.clone(),
             main_window_event_stream: param.0,
             id: param.1,
             title: param.2,
             description: param.3,
             status: param.4,
+            edit_task_window: None,
         }
     }
 
@@ -56,8 +63,28 @@ impl relm::Widget for Task {
                 println!("SetTitle({})", title);
                 self.model.title = title;
             }
-            TaskMsg::Edit => {
+            TaskMsg::OpenEditTaskWindow => {
                 println!("EditTask");
+                self.model.edit_task_window = Some(
+                    relm::init::<edit_task::EditTask>((
+                        self.model.relm.stream().clone(),
+                        self.model.id,
+                        self.model.title.clone(),
+                        self.model.description.clone(),
+                        self.model.status.clone(),
+                    ))
+                    .expect("secondary window"),
+                );
+            }
+            TaskMsg::UpdateTask(id, title, description) => {
+                self.model
+                    .edit_task_window
+                    .as_ref()
+                    .unwrap()
+                    .widget()
+                    .close();
+                self.model.description = description;
+                self.model.title = title;
             }
             TaskMsg::Delete => {
                 println!("DeleteTask");
@@ -90,7 +117,7 @@ impl relm::Widget for Task {
                 #[name="edit_button"]
                 gtk::Button {
                     label: "Edit",
-                    clicked => TaskMsg::Edit,
+                    clicked => TaskMsg::OpenEditTaskWindow,
                 },
 
                 #[name="delete_button"]
