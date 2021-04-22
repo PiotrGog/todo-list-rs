@@ -1,6 +1,3 @@
-mod add_task;
-mod column;
-mod edit_task;
-mod task;
-
+mod dialogs;
 pub mod main_window;
+mod widgets;

@@ -7,7 +7,7 @@ use relm_derive;
 
 use gtk::{LabelExt, OrientableExt};
 
-use super::edit_task;
+use crate::main_window::dialogs::edit_task;
 use crate::main_window::main_window;
 
 #[allow(dead_code)]

@@ -8,9 +8,9 @@ use relm_derive;
 use rand::Rng;
 use std::{cell::RefCell, rc::Rc};
 
-use super::add_task;
-use super::column;
-use super::column::Column as TasksColumn;
+use super::dialogs::add_task;
+use super::widgets::column;
+use super::widgets::column::Column as TasksColumn;
 
 #[derive(Debug, relm_derive::Msg)]
 pub enum MainWindowMsg {
@@ -139,35 +139,21 @@ impl relm::Widget for MainWindow {
             match &task.status {
                 tasks_model::status::Status::ToDo => {
                     println!("Msg::to_do_tasks");
-                    self.components.to_do_tasks.emit(column::ColumnMsg::AddTask(
-                        self.model.relm.stream().clone(),
-                        task.get_id(),
-                        task.title.clone(),
-                        task.description.clone(),
-                        task.status.clone(),
-                    ));
+                    self.components
+                        .to_do_tasks
+                        .emit(self.prepare_column_add_task_msg(task));
                 }
                 tasks_model::status::Status::InProgress => {
                     println!("Msg::in_progress_tasks");
                     self.components
                         .in_progress_tasks
-                        .emit(column::ColumnMsg::AddTask(
-                            self.model.relm.stream().clone(),
-                            task.get_id(),
-                            task.title.clone(),
-                            task.description.clone(),
-                            task.status.clone(),
-                        ));
+                        .emit(self.prepare_column_add_task_msg(task));
                 }
                 tasks_model::status::Status::Done => {
                     println!("Msg::done_tasks");
-                    self.components.done_tasks.emit(column::ColumnMsg::AddTask(
-                        self.model.relm.stream().clone(),
-                        task.get_id(),
-                        task.title.clone(),
-                        task.description.clone(),
-                        task.status.clone(),
-                    ));
+                    self.components
+                        .done_tasks
+                        .emit(self.prepare_column_add_task_msg(task));
                 }
                 #[allow(unreachable_patterns)]
                 _not_known => {
@@ -175,5 +161,17 @@ impl relm::Widget for MainWindow {
                 }
             }
         }
+    }
+}
+
+impl MainWindow {
+    fn prepare_column_add_task_msg(&self, task: &tasks_model::task::Task) -> column::ColumnMsg {
+        return column::ColumnMsg::AddTask(
+            self.model.relm.stream().clone(),
+            task.get_id(),
+            task.title.clone(),
+            task.description.clone(),
+            task.status.clone(),
+        );
     }
 }

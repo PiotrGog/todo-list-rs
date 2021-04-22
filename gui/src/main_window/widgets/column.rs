@@ -10,7 +10,7 @@ use gtk::{LabelExt, OrientableExt};
 use relm::ContainerWidget;
 
 use crate::main_window::main_window;
-use crate::main_window::task;
+use crate::main_window::widgets::task;
 
 #[derive(relm_derive::Msg)]
 pub enum ColumnMsg {

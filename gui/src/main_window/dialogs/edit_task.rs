@@ -5,7 +5,7 @@ use gtk::prelude::*;
 use relm;
 use relm_derive;
 
-use super::task;
+use crate::main_window::widgets::task;
 
 #[derive(relm_derive::Msg)]
 pub enum EditTaskMsg {
