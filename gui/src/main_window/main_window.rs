@@ -14,9 +14,20 @@ use super::widgets::column::Column as TasksColumn;
 
 #[derive(Debug, relm_derive::Msg)]
 pub enum MainWindowMsg {
-    CreateTask(String, String),
-    DeleteTask(u32, tasks_model::status::Status),
     OpenNewTaskWindow,
+    NewTaskWindowCallback {
+        title: String,
+        description: String,
+    },
+    UpdateTask {
+        id: u32,
+        title: String,
+        description: String,
+        status: tasks_model::status::Status,
+    },
+    DeleteTask {
+        id: u32,
+    },
     Quit,
 }
 
@@ -38,19 +49,15 @@ impl relm::Widget for MainWindow {
 
     fn update(&mut self, event: MainWindowMsg) {
         match event {
-            MainWindowMsg::CreateTask(title, description) => {
+            MainWindowMsg::NewTaskWindowCallback { title, description } => {
                 let task = tasks_model::task::Task::new(
                     rand::thread_rng().gen(),
                     &title[..],
                     &description[..],
                 );
-                self.components.to_do_tasks.emit(column::ColumnMsg::AddTask(
-                    self.model.relm.stream().clone(),
-                    task.get_id(),
-                    task.title.clone(),
-                    task.description.clone(),
-                    task.status.clone(),
-                ));
+                self.components
+                    .to_do_tasks
+                    .emit(self.prepare_column_add_task_msg(&task));
                 self.model.tasks.borrow_mut().add_task(task);
 
                 self.model
@@ -62,35 +69,51 @@ impl relm::Widget for MainWindow {
 
                 self.model.add_task_window = None;
             }
-            MainWindowMsg::DeleteTask(task_id, status) => {
-                self.model.tasks.borrow_mut().remove_task(task_id);
+            MainWindowMsg::UpdateTask {
+                id,
+                title,
+                description,
+                status,
+            } => {
+                let mut tasks = self.model.tasks.borrow_mut();
+                let mut task = tasks.get_task_mut(id).unwrap();
+                task.title = title;
+                task.description = description;
+                if task.status != status {
+                    task.status = status;
 
-                match status {
-                    tasks_model::status::Status::ToDo => {
-                        println!("Msg::to_do_tasks");
-                        self.components
-                            .to_do_tasks
-                            .emit(column::ColumnMsg::DeleteTask(task_id));
-                    }
-                    tasks_model::status::Status::InProgress => {
-                        println!("Msg::in_progress_tasks");
-                        self.components
-                            .in_progress_tasks
-                            .emit(column::ColumnMsg::DeleteTask(task_id));
-                    }
-                    tasks_model::status::Status::Done => {
-                        self.components
-                            .done_tasks
-                            .emit(column::ColumnMsg::DeleteTask(task_id));
-                    }
-                    #[allow(unreachable_patterns)]
-                    _not_known => {
-                        panic!("Not known task's status type {:?}", _not_known);
+                    match &task.status {
+                        tasks_model::status::Status::ToDo => {
+                            println!("Msg::to_do_tasks");
+                            self.components
+                                .to_do_tasks
+                                .emit(self.prepare_column_add_task_msg(task));
+                        }
+                        tasks_model::status::Status::InProgress => {
+                            println!("Msg::in_progress_tasks");
+                            self.components
+                                .in_progress_tasks
+                                .emit(self.prepare_column_add_task_msg(task));
+                        }
+                        tasks_model::status::Status::Done => {
+                            println!("Msg::done_tasks");
+                            self.components
+                                .done_tasks
+                                .emit(self.prepare_column_add_task_msg(task));
+                        }
+                        #[allow(unreachable_patterns)]
+                        _not_known => {
+                            panic!("Not known task's status type {:?}", _not_known);
+                        }
                     }
                 }
             }
+            MainWindowMsg::DeleteTask { id } => {
+                self.model.tasks.borrow_mut().remove_task(id);
+            }
             MainWindowMsg::OpenNewTaskWindow => {
                 println!("Msg::OpenNewTaskWindow");
+
                 self.model.add_task_window = Some(
                     relm::init::<add_task::AddTask>(self.model.relm.stream().clone())
                         .expect("secondary window"),
@@ -112,13 +135,13 @@ impl relm::Widget for MainWindow {
                     orientation: gtk::Orientation::Horizontal,
 
                     #[name="to_do_tasks"]
-                    TasksColumn("To do".to_string()),
+                    TasksColumn(self.model.relm.stream().clone(), tasks_model::status::Status::ToDo),
 
                     #[name="in_progress_tasks"]
-                    TasksColumn("In progress".to_string()),
+                    TasksColumn(self.model.relm.stream().clone(), tasks_model::status::Status::InProgress),
 
                     #[name="done_tasks"]
-                    TasksColumn("Done".to_string()),
+                    TasksColumn(self.model.relm.stream().clone(), tasks_model::status::Status::Done),
 
                 },
 
@@ -167,7 +190,6 @@ impl relm::Widget for MainWindow {
 impl MainWindow {
     fn prepare_column_add_task_msg(&self, task: &tasks_model::task::Task) -> column::ColumnMsg {
         return column::ColumnMsg::AddTask(
-            self.model.relm.stream().clone(),
             task.get_id(),
             task.title.clone(),
             task.description.clone(),

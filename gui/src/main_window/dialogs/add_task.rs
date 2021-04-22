@@ -51,7 +51,7 @@ impl relm::Widget for AddTask {
 
                 self.model
                     .main_window_event_stream
-                    .emit(main_window::MainWindowMsg::CreateTask(title, description));
+                    .emit(main_window::MainWindowMsg::NewTaskWindowCallback { title, description });
             }
         }
     }

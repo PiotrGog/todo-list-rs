@@ -14,36 +14,43 @@ use crate::main_window::widgets::task;
 
 #[derive(relm_derive::Msg)]
 pub enum ColumnMsg {
-    AddTask(
-        relm::StreamHandle<main_window::MainWindowMsg>,
-        u32,
-        String,
-        String,
-        tasks_model::status::Status,
-    ),
+    AddTask(u32, String, String, tasks_model::status::Status),
+    UpdateTask(u32, String, String, tasks_model::status::Status),
     DeleteTask(u32),
 }
 
 pub struct Model {
+    relm: relm::Relm<Column>,
+    main_window_event_stream: relm::StreamHandle<main_window::MainWindowMsg>,
     label: String,
     tasks: HashMap<u32, relm::Component<task::Task>>,
+    status: tasks_model::status::Status,
 }
 
 #[relm_derive::widget]
 impl relm::Widget for Column {
-    fn model(column_name: String) -> Model {
+    fn model(
+        relm: &relm::Relm<Self>,
+        param: (
+            relm::StreamHandle<main_window::MainWindowMsg>,
+            tasks_model::status::Status,
+        ),
+    ) -> Model {
         return Model {
-            label: column_name,
+            relm: relm.clone(),
+            main_window_event_stream: param.0,
+            label: param.1.to_string().to_string(),
             tasks: HashMap::<u32, relm::Component<task::Task>>::new(),
+            status: param.1,
         };
     }
 
     fn update(&mut self, event: ColumnMsg) {
         match event {
-            ColumnMsg::AddTask(main_window_event_stream, id, title, description, status) => {
+            ColumnMsg::AddTask(id, title, description, status) => {
                 println!("Msg::AddTask({}, {}, {})", id, title, description);
                 let component = self.widgets.column_tasks.add_widget::<task::Task>((
-                    main_window_event_stream,
+                    self.model.relm.stream().clone(),
                     id,
                     title,
                     description,
@@ -51,9 +58,27 @@ impl relm::Widget for Column {
                 ));
                 self.model.tasks.insert(id, component);
             }
-            ColumnMsg::DeleteTask(task_id) => {
-                let task_widget = self.model.tasks.remove(&task_id).unwrap();
-                self.widgets.column_tasks.remove_widget(task_widget);
+            ColumnMsg::UpdateTask(id, title, description, status) => {
+                println!("Msg::UpdateTask({}, {}, {})", id, title, description);
+
+                if status != self.model.status {
+                    self.delete_task_widget(id)
+                }
+
+                self.model
+                    .main_window_event_stream
+                    .emit(main_window::MainWindowMsg::UpdateTask {
+                        id,
+                        title,
+                        description,
+                        status,
+                    });
+            }
+            ColumnMsg::DeleteTask(id) => {
+                self.delete_task_widget(id);
+                self.model
+                    .main_window_event_stream
+                    .emit(main_window::MainWindowMsg::DeleteTask { id })
             }
         }
     }
@@ -77,5 +102,12 @@ impl relm::Widget for Column {
                 },
             },
         },
+    }
+}
+
+impl Column {
+    fn delete_task_widget(&mut self, id: u32) {
+        let task_widget = self.model.tasks.remove(&id).unwrap();
+        self.widgets.column_tasks.remove_widget(task_widget);
     }
 }

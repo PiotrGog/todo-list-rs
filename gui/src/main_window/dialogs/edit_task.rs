@@ -2,6 +2,7 @@ extern crate tasks as tasks_model;
 
 use gtk;
 use gtk::prelude::*;
+use gtk::ComboBoxTextExt;
 use relm;
 use relm_derive;
 
@@ -9,7 +10,7 @@ use crate::main_window::widgets::task;
 
 #[derive(relm_derive::Msg)]
 pub enum EditTaskMsg {
-    CreateTask,
+    UpdateTask,
 }
 
 pub struct EditTaskModel {
@@ -18,7 +19,7 @@ pub struct EditTaskModel {
     pub id: u32,
     pub title: String,
     pub description: String,
-    _status: tasks_model::status::Status,
+    status: tasks_model::status::Status,
 }
 
 #[relm_derive::widget]
@@ -39,13 +40,13 @@ impl relm::Widget for EditTask {
             id: param.1,
             title: param.2,
             description: param.3,
-            _status: param.4,
+            status: param.4,
         }
     }
 
     fn update(&mut self, event: EditTaskMsg) {
         match event {
-            EditTaskMsg::CreateTask => {
+            EditTaskMsg::UpdateTask => {
                 let title = self.widgets.title_entry.get_text().as_str().to_string();
                 let description = self
                     .widgets
@@ -70,10 +71,25 @@ impl relm::Widget for EditTask {
                     return;
                 }
 
+                let status = self
+                    .widgets
+                    .status_entry
+                    .get_active_id()
+                    .unwrap()
+                    .as_str()
+                    .to_string();
+
                 self.model.task_event_stream.emit(task::TaskMsg::UpdateTask(
                     self.model.id,
                     title,
                     description,
+                    if status == tasks_model::status::Status::ToDo.to_string() {
+                        tasks_model::status::Status::ToDo
+                    } else if status == tasks_model::status::Status::InProgress.to_string() {
+                        tasks_model::status::Status::InProgress
+                    } else {
+                        tasks_model::status::Status::Done
+                    },
                 ));
             }
         }
@@ -112,7 +128,7 @@ impl relm::Widget for EditTask {
                     },
 
                     #[name="status_entry"]
-                    gtk::ComboBox {
+                    gtk::ComboBoxText {
                         visible: true,
                     },
                 },
@@ -120,15 +136,30 @@ impl relm::Widget for EditTask {
                 #[name="create_task"]
                 gtk::Button {
                     label: "Save",
-                    clicked => EditTaskMsg::CreateTask,
+                    clicked => EditTaskMsg::UpdateTask,
                 }
             },
         }
     }
 
-    // fn init_view(&mut self) {
-    //     println!("Init view");
+    fn init_view(&mut self) {
+        println!("Init view");
 
-    //     self.widgets.status_entry.
-    // }
+        let todo_status = tasks_model::status::Status::ToDo.to_string();
+        let in_progress_status = tasks_model::status::Status::InProgress.to_string();
+        let done_status = tasks_model::status::Status::Done.to_string();
+        self.widgets
+            .status_entry
+            .append(Some(todo_status), todo_status);
+        self.widgets
+            .status_entry
+            .append(Some(in_progress_status), in_progress_status);
+        self.widgets
+            .status_entry
+            .append(Some(done_status), done_status);
+
+        self.widgets
+            .status_entry
+            .set_active_id(Some(self.model.status.to_string()));
+    }
 }

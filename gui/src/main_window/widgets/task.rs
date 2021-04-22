@@ -8,21 +8,21 @@ use relm_derive;
 use gtk::{LabelExt, OrientableExt};
 
 use crate::main_window::dialogs::edit_task;
-use crate::main_window::main_window;
+use crate::main_window::widgets::column;
 
 #[allow(dead_code)]
 #[derive(relm_derive::Msg)]
 pub enum TaskMsg {
     SetTitle(String),
     SetDescription(String),
-    UpdateTask(u32, String, String),
+    UpdateTask(u32, String, String, tasks_model::status::Status),
     OpenEditTaskWindow,
     Delete,
 }
 
 pub struct TaskModel {
     relm: relm::Relm<Task>,
-    main_window_event_stream: relm::StreamHandle<main_window::MainWindowMsg>,
+    column_widget_event_stream: relm::StreamHandle<column::ColumnMsg>,
     pub id: u32,
     pub title: String,
     pub description: String,
@@ -35,7 +35,7 @@ impl relm::Widget for Task {
     fn model(
         relm: &relm::Relm<Self>,
         param: (
-            relm::StreamHandle<main_window::MainWindowMsg>,
+            relm::StreamHandle<column::ColumnMsg>,
             u32,
             String,
             String,
@@ -44,7 +44,7 @@ impl relm::Widget for Task {
     ) -> TaskModel {
         TaskModel {
             relm: relm.clone(),
-            main_window_event_stream: param.0,
+            column_widget_event_stream: param.0,
             id: param.1,
             title: param.2,
             description: param.3,
@@ -76,24 +76,31 @@ impl relm::Widget for Task {
                     .expect("secondary window"),
                 );
             }
-            TaskMsg::UpdateTask(id, title, description) => {
+            TaskMsg::UpdateTask(id, title, description, status) => {
                 self.model
                     .edit_task_window
                     .as_ref()
                     .unwrap()
                     .widget()
                     .close();
-                self.model.description = description;
-                self.model.title = title;
+                self.model.edit_task_window = None;
+                self.model.description = description.clone();
+                self.model.title = title.clone();
+
+                self.model
+                    .column_widget_event_stream
+                    .emit(column::ColumnMsg::UpdateTask(
+                        id,
+                        title,
+                        description,
+                        status,
+                    ))
             }
             TaskMsg::Delete => {
                 println!("DeleteTask");
                 self.model
-                    .main_window_event_stream
-                    .emit(main_window::MainWindowMsg::DeleteTask(
-                        self.model.id,
-                        self.model.status.clone(),
-                    ));
+                    .column_widget_event_stream
+                    .emit(column::ColumnMsg::DeleteTask(self.model.id));
             }
         }
     }
