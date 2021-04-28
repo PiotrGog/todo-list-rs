@@ -85,6 +85,13 @@ impl relm::Widget for Column {
 
     view! {
         gtk::Frame {
+            child: {
+                pack_type: gtk::PackType::Start,
+                expand: true,
+                fill: true,
+                padding: 0,
+            },
+
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
                 border_width: 10,
@@ -95,10 +102,20 @@ impl relm::Widget for Column {
                     label: &self.model.label,
                 },
 
-                #[name="column_tasks"]
-                gtk::Box {
-                    spacing: 10,
-                    orientation: gtk::Orientation::Vertical,
+                #[name="scroll"]
+                gtk::ScrolledWindow {
+                    child: {
+                        pack_type: gtk::PackType::Start,
+                        expand: true,
+                        fill: true,
+                        padding: 0,
+                    },
+
+                    #[name="column_tasks"]
+                    gtk::Box {
+                        spacing: 10,
+                        orientation: gtk::Orientation::Vertical,
+                    },
                 },
             },
         },

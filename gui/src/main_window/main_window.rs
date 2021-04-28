@@ -128,11 +128,21 @@ impl relm::Widget for MainWindow {
 
     view! {
         gtk::Window {
+            property_default_height: 650,
+            property_default_width: 1000,
+            title: "Tasks Manager",
+
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
-
                 gtk::Box {
                     orientation: gtk::Orientation::Horizontal,
+                    spacing: 0,
+                    child: {
+                        pack_type: gtk::PackType::Start,
+                        expand: true,
+                        fill: true,
+                        padding: 0,
+                    },
 
                     #[name="to_do_tasks"]
                     TasksColumn(self.model.relm.stream().clone(), tasks_model::status::Status::ToDo),

@@ -98,6 +98,10 @@ impl relm::Widget for EditTask {
     view! {
         #[name="window"]
         gtk::Window {
+            property_default_height: 350,
+            property_default_width: 350,
+            title: "Task Manager [Edit Task]",
+
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
                 gtk::Box {

@@ -59,6 +59,10 @@ impl relm::Widget for AddTask {
     view! {
         #[name="window"]
         gtk::Window {
+            property_default_height: 350,
+            property_default_width: 350,
+            title: "Task Manager [Add Task]",
+
             gtk::Box {
                 orientation: gtk::Orientation::Vertical,
                 gtk::Box {
