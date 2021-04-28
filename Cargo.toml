@@ -7,5 +7,5 @@ members = [
 ]
 
 default-members = [
-    "gui"
+    "main"
 ]
